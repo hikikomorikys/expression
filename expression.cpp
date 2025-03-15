@@ -1,6 +1,7 @@
 #include "expression.hpp"
 #include <sstream>
 #include <stdexcept>
+#include <cmath>
 
 template <typename T>
 Expression<T>::Expression(T val) : type(Type::CONSTANT), value(val) {}
@@ -25,7 +26,7 @@ Expression<T>::Expression(Expression&& other) noexcept
       func(std::move(other.func)) {}
 
 template <typename T>
-Expression<T>& Expression<T>::operator=(const Expression& other){
+Expression<T>& Expression<T>::operator=(const Expression& other) {
     if (this != &other) {
         type = other.type;
         value = other.value;
@@ -39,7 +40,7 @@ Expression<T>& Expression<T>::operator=(const Expression& other){
 }
 
 template <typename T>
-Expression<T>& Expression<T>::operator=(Expression&& other) noexcept{
+Expression<T>& Expression<T>::operator=(Expression&& other) noexcept {
     type = std::move(other.type);
     value = std::move(other.value);
     variable = std::move(other.variable);
@@ -51,21 +52,21 @@ Expression<T>& Expression<T>::operator=(Expression&& other) noexcept{
 }
 
 template <typename T>
-T Expression<T>::evaluate(const std::map<std::string, T>& variables) const{
+T Expression<T>::evaluate(const std::map<std::string, T>& variables) const {
     if (type == Type::CONSTANT) {
         return value;
     }
-    if (type == Type::VARIABLE){
+    if (type == Type::VARIABLE) {
         auto it = variables.find(variable);
-        if (it != variables.end()){
+        if (it != variables.end()) {
             return it->second;
         }
         throw std::runtime_error("Переменная не найдена: " + variable);
     }
-    if (type == Type::OPERATION){
+    if (type == Type::OPERATION) {
         T left_val = left->evaluate(variables);
         T right_val = right->evaluate(variables);
-        switch (op){
+        switch (op) {
             case '+': return left_val + right_val;
             case '-': return left_val - right_val;
             case '*': return left_val * right_val;
@@ -78,13 +79,13 @@ T Expression<T>::evaluate(const std::map<std::string, T>& variables) const{
 }
 
 template <typename T>
-std::string Expression<T>::toString() const{
+std::string Expression<T>::toString() const {
     std::ostringstream oss;
-    if (type == Type::CONSTANT){
+    if (type == Type::CONSTANT) {
         oss << value;
-    } else if (type == Type::VARIABLE){
+    } else if (type == Type::VARIABLE) {
         oss << variable;
-    } else if (type == Type::OPERATION){
+    } else if (type == Type::OPERATION) {
         oss << "(" << left->toString() << " " << op << " " << right->toString() << ")";
     }
     return oss.str();
@@ -102,36 +103,54 @@ typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& var)
         Ptr dl = left->differentiate(var);
         Ptr dr = right->differentiate(var);
         switch (op) {
-            case '+': return std::make_shared<Expression<T>>('+', dl, dr);
-            case '-': return std::make_shared<Expression<T>>('-', dl, dr);
-            case '*': return std::make_shared<Expression<T>>('+',
-                          std::make_shared<Expression<T>>('*', dl, right),
-                          std::make_shared<Expression<T>>('*', left, dr));
-            case '/': return std::make_shared<Expression<T>>('/',
-                          std::make_shared<Expression<T>>('-',
-                              std::make_shared<Expression<T>>('*', dl, right),
-                              std::make_shared<Expression<T>>('*', left, dr)),
-                          std::make_shared<Expression<T>>('*', right, right));
+            case '+':
+                return std::make_shared<Expression<T>>('+', dl, dr);
+            case '-':
+                return std::make_shared<Expression<T>>('-', dl, dr);
+            case '*':
+                return std::make_shared<Expression<T>>(
+                    '+',
+                    std::make_shared<Expression<T>>('*', dl, right),
+                    std::make_shared<Expression<T>>('*', left, dr)
+                );
+            case '/':
+                return std::make_shared<Expression<T>>(
+                    '/',
+                    std::make_shared<Expression<T>>(
+                        '-',
+                        std::make_shared<Expression<T>>('*', dl, right),
+                        std::make_shared<Expression<T>>('*', left, dr)
+                    ),
+                    std::make_shared<Expression<T>>('*', right, right)
+                );
             case '^':
-                return std::make_shared<Expression<T>>('*',
-                           std::make_shared<Expression<T>>('*', right,
-                               std::make_shared<Expression<T>>('^', left,
-                                   std::make_shared<Expression<T>>('-', right, std::make_shared<Expression<T>>(T(1))))),
-                           dl);
-            default: throw std::runtime_error("Неизвестная операция в дифференцировании");
+                return std::make_shared<Expression<T>>(
+                    '*',
+                    std::make_shared<Expression<T>>(
+                        '*',
+                        right,
+                        std::make_shared<Expression<T>>('^', left,
+                            std::make_shared<Expression<T>>(right->evaluate({}) - T(1))
+                        )
+                    ),
+                    dl
+                );
+            default:
+                throw std::runtime_error("Неизвестная операция в дифференцировании");
         }
     }
     throw std::runtime_error("Ошибка вычисления производной");
 }
 
 template <typename T>
-Expression<T> Expression<T>::fromString(const std::string& str) {
+typename Expression<T>::Ptr Expression<T>::fromString(const std::string& str) {
     std::istringstream iss(str);
     T value;
     if (iss >> value) {
-        return Expression<T>(value);
-    } else {
-        return Expression<T>(str);
+        return std::make_shared<Expression<T>>(value);
+    } 
+    else {
+        return std::make_shared<Expression<T>>(str);
     }
 }
 template class Expression<double>;

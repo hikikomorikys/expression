@@ -1,24 +1,47 @@
 #include "expression.hpp"
 #include <sstream>
 #include <stdexcept>
+#include <cmath>
 
+template <typename T>
+typename Expression<T>::Ptr add(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+    return std::make_shared<Expression<T>>('+', lhs, rhs);
+}
+
+template <typename T>
+typename Expression<T>::Ptr subtract(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+    return std::make_shared<Expression<T>>('-', lhs, rhs);
+}
+
+template <typename T>
+typename Expression<T>::Ptr multiply(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+    return std::make_shared<Expression<T>>('*', lhs, rhs);
+}
+
+template <typename T>
+typename Expression<T>::Ptr divide(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+    return std::make_shared<Expression<T>>('/', lhs, rhs);
+}
+
+template <typename T>
+typename Expression<T>::Ptr power(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+    return std::make_shared<Expression<T>>('^', lhs, rhs);
+}
+
+//fromString
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::fromString(const std::string& str){
     std::istringstream iss(str);
     char op;
     T value;
-    
-    //если строка содержит число
+
     if (iss >> value){
         return std::make_shared<Expression<T>>(value);
     }
 
-    //если строка - переменная
     if (!str.empty() && std::isalpha(str[0])){
         return std::make_shared<Expression<T>>(str);
     }
-    
-    //если строка - бинарная операция
     std::string left, right;
     iss.clear();
     iss.str(str);
@@ -28,37 +51,32 @@ typename Expression<T>::Ptr Expression<T>::fromString(const std::string& str){
     throw std::runtime_error("Ошибка парсинга выражения");
 }
 
-//конструктор для числового значения
+//конструкторы и операторы копирования/перемещения
 template <typename T>
 Expression<T>::Expression(T val) : type(Type::CONSTANT), value(val) {}
 
-//конструктор для переменной
 template <typename T>
 Expression<T>::Expression(const std::string& var) : type(Type::VARIABLE), variable(var) {}
 
-//конструктор для бинарных операций
 template <typename T>
 Expression<T>::Expression(char op, Ptr left, Ptr right) 
     : type(Type::OPERATION), op(op), left(std::move(left)), right(std::move(right)) {}
 
-//конструктор копирования
 template <typename T>
-Expression<T>::Expression(const Expression& other) 
-    : type(other.type), value(other.value), variable(other.variable), op(other.op), 
-      left(other.left), right(other.right), func(other.func) {}
+Expression<T>::Expression(const Expression& other)
+    : type(other.type), value(other.value), variable(other.variable),
+      op(other.op), left(other.left), right(other.right), func(other.func) {}
 
-//конструктор перемещения
 template <typename T>
-Expression<T>::Expression(Expression&& other) noexcept 
-    : type(std::move(other.type)), value(std::move(other.value)), 
-      variable(std::move(other.variable)), op(std::move(other.op)), 
-      left(std::move(other.left)), right(std::move(other.right)), 
+Expression<T>::Expression(Expression&& other) noexcept
+    : type(std::move(other.type)), value(std::move(other.value)),
+      variable(std::move(other.variable)), op(std::move(other.op)),
+      left(std::move(other.left)), right(std::move(other.right)),
       func(std::move(other.func)) {}
 
-//оператор копирования
 template <typename T>
 Expression<T>& Expression<T>::operator=(const Expression& other){
-    if (this != &other){
+    if (this != &other) {
         type = other.type;
         value = other.value;
         variable = other.variable;
@@ -69,8 +87,6 @@ Expression<T>& Expression<T>::operator=(const Expression& other){
     }
     return *this;
 }
-
-//оператор перемещения
 template <typename T>
 Expression<T>& Expression<T>::operator=(Expression&& other) noexcept{
     type = std::move(other.type);
@@ -86,23 +102,27 @@ Expression<T>& Expression<T>::operator=(Expression&& other) noexcept{
 //арифметические операции
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::operator+(const Expression& rhs) const{
-    return std::make_shared<Expression>('+', std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
+    return add(std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
 }
+
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::operator-(const Expression& rhs) const{
-    return std::make_shared<Expression>('-', std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
+    return subtract(std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
 }
+
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::operator*(const Expression& rhs) const{
-    return std::make_shared<Expression>('*', std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
+    return multiply(std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
 }
+
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::operator/(const Expression& rhs) const{
-    return std::make_shared<Expression>('/', std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
+    return divide(std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
 }
+
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::pow(const Expression& rhs) const{
-    return std::make_shared<Expression>('^', std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
+    return power(std::make_shared<Expression>(*this), std::make_shared<Expression>(rhs));
 }
 
 //функции sin, cos, ln, exp
@@ -142,66 +162,33 @@ typename Expression<T>::Ptr Expression<T>::exp(Ptr arg){
     return expr;
 }
 
-//символьное дифференцирование
+//дифференцирование
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& var) const{
     if (type == Type::CONSTANT) return std::make_shared<Expression>(T(0));
     if (type == Type::VARIABLE) return std::make_shared<Expression>(variable == var ? T(1) : T(0));
+
     if (type == Type::OPERATION){
-        if (op == '+') return left->differentiate(var) + right->differentiate(var);
-        if (op == '-') return left->differentiate(var) - right->differentiate(var);
-        if (op == '*') return left->differentiate(var) * right + left * right->differentiate(var);
-        if (op == '/'){
-            auto num = left->differentiate(var) * right - left * right->differentiate(var);
-            auto denom = right * right;
-            return num / denom;
-        }
+        auto dLeft = left->differentiate(var);
+        auto dRight = right->differentiate(var);
+        if (op == '+') return add(dLeft, dRight);
+        if (op == '-') return subtract(dLeft, dRight);
+        if (op == '*') return add(multiply(dLeft, right), multiply(left, dRight));
+        if (op == '/') return divide(subtract(multiply(dLeft, right), multiply(left, dRight)), power(right, std::make_shared<Expression>(2.0)));
         if (op == '^'){
-            // d/dx (f^g) = f^g * (g * f'/f + g' * ln(f))
             auto f = left, g = right;
-            auto df = f->differentiate(var), dg = g->differentiate(var);
-            return (f->pow(*g)) * ((*g) * df / *f + dg * ln(f));
+            auto df = dLeft, dg = dRight;
+            return multiply(power(f, g), add(multiply(dg, ln(f)), divide(multiply(g, df), f)));
         }
     }
+
     if (type == Type::FUNCTION){
-        if (func == "sin") return cos(left) * left->differentiate(var);
-        if (func == "cos") return std::make_shared<Expression<T>>("-1") * sin(left) * left->differentiate(var);
-        if (func == "ln") return left->differentiate(var) / left;
-        if (func == "exp") return exp(left) * left->differentiate(var);
+        if (func == "sin") return multiply(cos(left), left->differentiate(var));
+        if (func == "cos") return multiply(std::make_shared<Expression>(-1), multiply(sin(left), left->differentiate(var)));
+        if (func == "ln") return divide(left->differentiate(var), left);
+        if (func == "exp") return multiply(exp(left), left->differentiate(var));
     }
     return nullptr;
 }
 
-//вычисление выражения
-template <typename T>
-T Expression<T>::evaluate(const std::map<std::string, T>& variables) const{
-    if (type == Type::CONSTANT) return value;
-    if (type == Type::VARIABLE) return variables.at(variable);
-    if (type == Type::OPERATION) {
-        T leftVal = left->evaluate(variables);
-        T rightVal = right->evaluate(variables);
-        if (op == '+') return leftVal + rightVal;
-        if (op == '-') return leftVal - rightVal;
-        if (op == '*') return leftVal * rightVal;
-        if (op == '/') return leftVal / rightVal;
-        if (op == '^') return std::pow(leftVal, rightVal);
-    }
-    if (type == Type::FUNCTION){
-        T arg = left->evaluate(variables);
-        if (func == "sin") return std::sin(arg);
-        if (func == "cos") return std::cos(arg);
-        if (func == "ln") return std::log(arg);
-        if (func == "exp") return std::exp(arg);
-    }
-    return T(0);
-}
-
-//преобразование в строку
-template <typename T>
-std::string Expression<T>::toString() const{
-    if (type == Type::CONSTANT) return std::to_string(value);
-    if (type == Type::VARIABLE) return variable;
-    if (type == Type::OPERATION) return "(" + left->toString() + " " + op + " " + right->toString() + ")";
-    if (type == Type::FUNCTION) return func + "(" + left->toString() + ")";
-    return "";
-}
+template class Expression<double>;

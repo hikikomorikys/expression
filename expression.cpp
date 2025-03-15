@@ -1,5 +1,6 @@
 #include "expression.hpp"
 #include <sstream>
+#include <cmath>
 #include <stdexcept>
 
 template <typename T>
@@ -51,107 +52,87 @@ Expression<T>& Expression<T>::operator=(Expression&& other) noexcept {
 }
 
 template <typename T>
-typename Expression<T>::Ptr Expression<T>::operator+(Ptr rhs) const {
-    return std::make_shared<Expression>('+', this->shared_from_this(), rhs);
+typename Expression<T>::Ptr Expression<T>::operator+(const Expression& rhs) const {
+    return add(left, rhs.left);
 }
 
 template <typename T>
-typename Expression<T>::Ptr Expression<T>::operator-(Ptr rhs) const {
-    return std::make_shared<Expression>('-', this->shared_from_this(), rhs);
+typename Expression<T>::Ptr Expression<T>::operator-(const Expression& rhs) const {
+    return subtract(left, rhs.left);
 }
 
 template <typename T>
-typename Expression<T>::Ptr Expression<T>::operator*(Ptr rhs) const {
-    return std::make_shared<Expression>('*', this->shared_from_this(), rhs);
+typename Expression<T>::Ptr Expression<T>::operator*(const Expression& rhs) const {
+    return multiply(left, rhs.left);
 }
 
 template <typename T>
-typename Expression<T>::Ptr Expression<T>::operator/(Ptr rhs) const {
-    return std::make_shared<Expression>('/', this->shared_from_this(), rhs);
+typename Expression<T>::Ptr Expression<T>::operator/(const Expression& rhs) const {
+    return divide(left, rhs.left);
 }
 
 template <typename T>
-typename Expression<T>::Ptr Expression<T>::pow(Ptr rhs) const {
-    return std::make_shared<Expression>('^', this->shared_from_this(), rhs);
+typename Expression<T>::Ptr Expression<T>::pow(const Expression& rhs) const {
+    return power(left, rhs.left);
 }
 
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::sin(Ptr arg) {
-    auto expr = std::make_shared<Expression>("sin");
-    expr->type = Type::FUNCTION;
+    auto expr = std::make_shared<Expression>('s', arg, nullptr);
     expr->func = "sin";
-    expr->left = arg;
     return expr;
 }
 
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::cos(Ptr arg) {
-    auto expr = std::make_shared<Expression>("cos");
-    expr->type = Type::FUNCTION;
+    auto expr = std::make_shared<Expression>('c', arg, nullptr);
     expr->func = "cos";
-    expr->left = arg;
     return expr;
 }
 
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::ln(Ptr arg) {
-    auto expr = std::make_shared<Expression>("ln");
-    expr->type = Type::FUNCTION;
+    auto expr = std::make_shared<Expression>('l', arg, nullptr);
     expr->func = "ln";
-    expr->left = arg;
     return expr;
 }
 
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::exp(Ptr arg) {
-    auto expr = std::make_shared<Expression>("exp");
-    expr->type = Type::FUNCTION;
+    auto expr = std::make_shared<Expression>('e', arg, nullptr);
     expr->func = "exp";
-    expr->left = arg;
     return expr;
 }
 
 template <typename T>
-T Expression<T>::evaluate(const std::map<std::string, T>& variables) const {
-    switch (type) {
-        case Type::CONSTANT:
-            return value;
-        case Type::VARIABLE:
-            if (variables.count(variable))
-                return variables.at(variable);
-            throw std::runtime_error("Variable '" + variable + "' not found.");
-        case Type::OPERATION: {
-            T left_val = left->evaluate(variables);
-            T right_val = right->evaluate(variables);
-            switch (op) {
-                case '+': return left_val + right_val;
-                case '-': return left_val - right_val;
-                case '*': return left_val * right_val;
-                case '/': return left_val / right_val;
-                case '^': return std::pow(left_val, right_val);
-                default: throw std::runtime_error("Unknown operation.");
-            }
-        }
-        case Type::FUNCTION:
-            if (func == "sin") return std::sin(left->evaluate(variables));
-            if (func == "cos") return std::cos(left->evaluate(variables));
-            if (func == "ln") return std::log(left->evaluate(variables));
-            if (func == "exp") return std::exp(left->evaluate(variables));
-            throw std::runtime_error("Unknown function.");
+T Expression<T>::evaluate(const std::map<std::string, T>& vars) const {
+    if (type == Type::CONSTANT) return value;
+    if (type == Type::VARIABLE) {
+        auto it = vars.find(variable);
+        if (it != vars.end()) return it->second;
+        throw std::runtime_error("Variable not found: " + variable);
     }
-    return T{};
+    if (type == Type::OPERATION) {
+        T left_val = left->evaluate(vars);
+        T right_val = right->evaluate(vars);
+        switch (op) {
+            case '+': return left_val + right_val;
+            case '-': return left_val - right_val;
+            case '*': return left_val * right_val;
+            case '/': return left_val / right_val;
+            case '^': return std::pow(left_val, right_val);
+            default: throw std::runtime_error("Unknown operation.");
+        }
+    }
+    throw std::runtime_error("Evaluation error.");
 }
 
 template <typename T>
 std::string Expression<T>::toString() const {
     std::ostringstream oss;
     switch (type) {
-        case Type::CONSTANT:
-            oss << value;
-            break;
-        case Type::VARIABLE:
-            oss << variable;
-            break;
+        case Type::CONSTANT: oss << value; break;
+        case Type::VARIABLE: oss << variable; break;
         case Type::OPERATION:
             oss << "(" << left->toString() << " " << op << " " << right->toString() << ")";
             break;

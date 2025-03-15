@@ -26,11 +26,14 @@ std::string Expression<T>::toString() const {
         } else {
             os << value_;
         }
-    } else {
+    } 
+    else {
         if (op_ == 's' || op_ == 'c' || op_ == 'l' || op_ == 'e') {
             os << op_ << "(" << lhs_->toString() << ")";
-        } else {
+        } else if (op_ == '+' || op_ == '-') {
             os << "(" << lhs_->toString() << " " << op_ << " " << rhs_->toString() << ")";
+        } else {
+            os << "(" << lhs_->toString() << ") " << op_ << " (" << rhs_->toString() << ")";
         }
     }
     return os.str();

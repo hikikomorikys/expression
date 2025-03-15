@@ -4,6 +4,9 @@
 #include <memory>
 #include <string>
 #include <map>
+#include <sstream>
+#include <cmath>
+#include <stdexcept>
 
 template <typename T>
 class Expression {
@@ -28,6 +31,17 @@ public:
     Ptr differentiate(const std::string& var) const;
     T evaluate(const std::map<std::string, T>& variables) const;
     std::string toString() const;
+
+    static Ptr fromString(const std::string& str) {
+        std::istringstream iss(str);
+        T value;
+        if (iss >> value) {
+            return std::make_shared<Expression<T>>(value);
+        }
+        else {
+            return std::make_shared<Expression<T>>(str);
+        }
+    }
 private:
     enum class Type { CONSTANT, VARIABLE, OPERATION, FUNCTION };
     Type type;
@@ -42,5 +56,5 @@ private:
     static Ptr divide(Ptr lhs, Ptr rhs);
     static Ptr power(Ptr lhs, Ptr rhs);
 };
-extern template class Expression<double>; 
-#endif  // EXPRESSION_HPP
+extern template class Expression<double>;
+#endif

@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include <map>
-#include <cmath>
 
 template <typename T>
 class Expression {
@@ -17,11 +16,11 @@ public:
     Expression(Expression&& other) noexcept;
     Expression& operator=(const Expression& other);
     Expression& operator=(Expression&& other) noexcept;
-    Ptr operator+(Ptr rhs) const;
-    Ptr operator-(Ptr rhs) const;
-    Ptr operator*(Ptr rhs) const;
-    Ptr operator/(Ptr rhs) const;
-    Ptr pow(Ptr rhs) const;
+    Ptr operator+(const Expression& rhs) const;
+    Ptr operator-(const Expression& rhs) const;
+    Ptr operator*(const Expression& rhs) const;
+    Ptr operator/(const Expression& rhs) const;
+    Ptr pow(const Expression& rhs) const;
     static Ptr sin(Ptr arg);
     static Ptr cos(Ptr arg);
     static Ptr ln(Ptr arg);
@@ -29,14 +28,12 @@ public:
     Ptr differentiate(const std::string& var) const;
     T evaluate(const std::map<std::string, T>& variables) const;
     std::string toString() const;
-    static Ptr fromString(const std::string& str);
-
 private:
     enum class Type { CONSTANT, VARIABLE, OPERATION, FUNCTION };
     Type type;
-    T value{};
+    T value;
     std::string variable;
-    char op{};
+    char op;
     Ptr left, right;
     std::string func;
     static Ptr add(Ptr lhs, Ptr rhs);
@@ -45,5 +42,5 @@ private:
     static Ptr divide(Ptr lhs, Ptr rhs);
     static Ptr power(Ptr lhs, Ptr rhs);
 };
-extern template class Expression<double>;
-#endif
+extern template class Expression<double>; 
+#endif  // EXPRESSION_HPP

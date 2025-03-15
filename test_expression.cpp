@@ -52,7 +52,10 @@ void testDifferentiation() {
     Expr x = std::make_shared<Expression<double>>("x");
     Expr expr = x * Expression<double>::sin(x);
     Expr derivative = expr->differentiate("x");
-    
+
+    std::cout << "Expected: (x * cos(x) + sin(x))" << std::endl;
+    std::cout << "Actual:   " << derivative->toString() << std::endl;
+
     TEST_CASE("Differentiation", derivative->toString() == "(x * cos(x) + sin(x))");
 }
 

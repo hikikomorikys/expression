@@ -28,9 +28,16 @@ std::string Expression<T>::toString() const {
             os << value_;
         }
     } else {
-        if (op_ == 's' || op_ == 'c' || op_ == 'l' || op_ == 'e') {
-            os << op_ << "(" << lhs_->toString() << ")";
-        } else {
+        if (op_ == 's') {
+            os << "sin(" << lhs_->toString() << ")";
+        } else if (op_ == 'c') {
+            os << "cos(" << lhs_->toString() << ")";
+        } else if (op_ == 'l') {
+            os << "ln(" << lhs_->toString() << ")";
+        } else if (op_ == 'e') {
+            os << "exp(" << lhs_->toString() << ")";
+        }
+        else {
             os << "(" << lhs_->toString() << " " << op_ << " " << rhs_->toString() << ")";
         }
     }

@@ -4,11 +4,9 @@
 #include <memory>
 #include <string>
 #include <map>
-#include <cmath>
-#include <complex>
 
 template <typename T>
-class Expression {
+class Expression{
 public:
     using Ptr = std::shared_ptr<Expression>;
     Expression(T value);
@@ -45,5 +43,5 @@ private:
     static Ptr divide(Ptr lhs, Ptr rhs);
     static Ptr power(Ptr lhs, Ptr rhs);
 };
-#include "expression.cpp"
+extern template class Expression<double>;
 #endif

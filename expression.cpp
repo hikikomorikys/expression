@@ -192,3 +192,8 @@ typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& var)
 }
 
 template class Expression<double>;
+template typename Expression<double>::Ptr add<double>(typename Expression<double>::Ptr, typename Expression<double>::Ptr);
+template typename Expression<double>::Ptr subtract<double>(typename Expression<double>::Ptr, typename Expression<double>::Ptr);
+template typename Expression<double>::Ptr multiply<double>(typename Expression<double>::Ptr, typename Expression<double>::Ptr);
+template typename Expression<double>::Ptr divide<double>(typename Expression<double>::Ptr, typename Expression<double>::Ptr);
+template typename Expression<double>::Ptr power<double>(typename Expression<double>::Ptr, typename Expression<double>::Ptr);

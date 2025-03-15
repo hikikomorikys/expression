@@ -41,4 +41,5 @@ private:
     std::string func;
 };
 
+#include "expression.cpp"
 #endif

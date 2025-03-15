@@ -111,27 +111,34 @@ typename Expression<T>::Ptr Expression<T>::sin(Ptr arg){
     auto expr = std::make_shared<Expression>(*arg);
     expr->type = Type::FUNCTION;
     expr->func = "sin";
+    expr->left = arg;
     return expr;
 }
+
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::cos(Ptr arg){
     auto expr = std::make_shared<Expression>(*arg);
     expr->type = Type::FUNCTION;
     expr->func = "cos";
+    expr->left = arg;
     return expr;
 }
+
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::ln(Ptr arg){
     auto expr = std::make_shared<Expression>(*arg);
     expr->type = Type::FUNCTION;
     expr->func = "ln";
+    expr->left = arg;
     return expr;
 }
+
 template <typename T>
 typename Expression<T>::Ptr Expression<T>::exp(Ptr arg){
     auto expr = std::make_shared<Expression>(*arg);
     expr->type = Type::FUNCTION;
     expr->func = "exp";
+    expr->left = arg;
     return expr;
 }
 

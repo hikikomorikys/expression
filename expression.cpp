@@ -1,5 +1,32 @@
 #include "expression.hpp"
 #include <sstream>
+#include <stdexcept>
+
+template <typename T>
+typename Expression<T>::Ptr Expression<T>::fromString(const std::string& str){
+    std::istringstream iss(str);
+    char op;
+    T value;
+    
+    //если строка содержит число
+    if (iss >> value){
+        return std::make_shared<Expression<T>>(value);
+    }
+
+    //если строка - переменная
+    if (!str.empty() && std::isalpha(str[0])){
+        return std::make_shared<Expression<T>>(str);
+    }
+    
+    //если строка - бинарная операция
+    std::string left, right;
+    iss.clear();
+    iss.str(str);
+    if (std::getline(iss, left, ' ') && iss >> op && std::getline(iss, right)){
+        return std::make_shared<Expression<T>>(op, fromString(left), fromString(right));
+    }
+    throw std::runtime_error("Ошибка парсинга выражения");
+}
 
 //конструктор для числового значения
 template <typename T>

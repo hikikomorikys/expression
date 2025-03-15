@@ -1,60 +1,42 @@
-#ifndef EXPRESSION_HPP
-#define EXPRESSION_HPP
-#include <iostream>
+#pragma once
 #include <memory>
 #include <string>
 #include <map>
-#include <sstream>
-#include <cmath>
-#include <stdexcept>
 
 template <typename T>
 class Expression {
 public:
-    using Ptr = std::shared_ptr<Expression>;
+    using Ptr = std::shared_ptr<Expression<T>>;
     Expression(T value);
-    Expression(const std::string& var);
-    Expression(char op, Ptr left, Ptr right);
-    Expression(const Expression& other);
-    Expression(Expression&& other) noexcept;
-    Expression& operator=(const Expression& other);
-    Expression& operator=(Expression&& other) noexcept;
-    Ptr operator+(const Expression& rhs) const;
-    Ptr operator-(const Expression& rhs) const;
-    Ptr operator*(const Expression& rhs) const;
-    Ptr operator/(const Expression& rhs) const;
-    Ptr pow(const Expression& rhs) const;
+    Expression(const std::string& variable);
+    Expression(char op, Ptr lhs, Ptr rhs);
+    std::string toString() const;
+    T evaluate(const std::map<std::string, T>& variables) const;
+    Ptr differentiate(const std::string& variable) const;
+    static Ptr fromString(const std::string& str);
     static Ptr sin(Ptr arg);
     static Ptr cos(Ptr arg);
     static Ptr ln(Ptr arg);
     static Ptr exp(Ptr arg);
-    Ptr differentiate(const std::string& var) const;
-    T evaluate(const std::map<std::string, T>& variables) const;
-    std::string toString() const;
-
-    static Ptr fromString(const std::string& str) {
-        std::istringstream iss(str);
-        T value;
-        if (iss >> value) {
-            return std::make_shared<Expression<T>>(value);
-        }
-        else {
-            return std::make_shared<Expression<T>>(str);
-        }
+    friend Ptr operator+(Ptr lhs, Ptr rhs) {
+        return std::make_shared<Expression<T>>('+', lhs, rhs);
+    }
+    friend Ptr operator-(Ptr lhs, Ptr rhs) {
+        return std::make_shared<Expression<T>>('-', lhs, rhs);
+    }
+    friend Ptr operator*(Ptr lhs, Ptr rhs) {
+        return std::make_shared<Expression<T>>('*', lhs, rhs);
+    }
+    friend Ptr operator/(Ptr lhs, Ptr rhs) {
+        return std::make_shared<Expression<T>>('/', lhs, rhs);
+    }
+    friend Ptr operator^(Ptr lhs, Ptr rhs) {
+        return std::make_shared<Expression<T>>('^', lhs, rhs);
     }
 private:
-    enum class Type { CONSTANT, VARIABLE, OPERATION, FUNCTION };
-    Type type;
-    T value;
-    std::string variable;
-    char op;
-    Ptr left, right;
-    std::string func;
-    static Ptr add(Ptr lhs, Ptr rhs);
-    static Ptr subtract(Ptr lhs, Ptr rhs);
-    static Ptr multiply(Ptr lhs, Ptr rhs);
-    static Ptr divide(Ptr lhs, Ptr rhs);
-    static Ptr power(Ptr lhs, Ptr rhs);
+    char op_;
+    T value_;
+    std::string variable_;
+    Ptr lhs_;
+    Ptr rhs_;
 };
-extern template class Expression<double>;
-#endif

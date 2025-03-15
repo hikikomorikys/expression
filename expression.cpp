@@ -34,17 +34,16 @@ std::string Expression<T>::toString() const {
         return "ln(" + lhs_->toString() + ")";
     } else if (op_ == 'e') {
         return "exp(" + lhs_->toString() + ")";
-    }
-    else if (op_ == '+') {
+    } else if (op_ == '+') {
         return "(" + lhs_->toString() + " + " + rhs_->toString() + ")";
-    }
-    else if (op_ == '*') {
-        return "(" + lhs_->toString() + " * " + rhs_->toString() + ")";
-    }
-    else if (op_ == '+') {
-        return lhs_->toString() + " + " + rhs_->toString();
+    } else if (op_ == '-') {
+        return "(" + lhs_->toString() + " - " + rhs_->toString() + ")";
     } else if (op_ == '*') {
         return "(" + lhs_->toString() + " * " + rhs_->toString() + ")";
+    } else if (op_ == '/') {
+        return "(" + lhs_->toString() + " / " + rhs_->toString() + ")";
+    } else if (op_ == '^') {
+        return "(" + lhs_->toString() + " ^ " + rhs_->toString() + ")";
     }
     return "(" + lhs_->toString() + " " + op_ + " " + rhs_->toString() + ")";
 }
@@ -90,7 +89,7 @@ T Expression<T>::evaluate(const std::map<std::string, T>& variables) const {
 }
 
 template <typename T>
-std::shared_ptr<Expression<T>> Expression<T>::differentiate(const std::string& variableName) const {
+typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& variableName) const {
     if (op_ == 0) {
         if (!variable_.empty()) {
             return variable_ == variableName
@@ -124,8 +123,8 @@ std::shared_ptr<Expression<T>> Expression<T>::differentiate(const std::string& v
         );
         return std::make_shared<Expression<T>>(
             '+',
-            right,
-            left
+            left,
+            right
         );
     } else if (op_ == '/') {
         return std::make_shared<Expression<T>>(
@@ -133,14 +132,10 @@ std::shared_ptr<Expression<T>> Expression<T>::differentiate(const std::string& v
             std::make_shared<Expression<T>>(
                 '-',
                 std::make_shared<Expression<T>>(
-                    '*',
-                    lhs_->differentiate(variableName),
-                    rhs_
+                    '*', lhs_->differentiate(variableName), rhs_
                 ),
                 std::make_shared<Expression<T>>(
-                    '*',
-                    lhs_,
-                    rhs_->differentiate(variableName)
+                    '*', lhs_, rhs_->differentiate(variableName)
                 )
             ),
             std::make_shared<Expression<T>>(
@@ -148,11 +143,10 @@ std::shared_ptr<Expression<T>> Expression<T>::differentiate(const std::string& v
             )
         );
     } else if (op_ == 's') {
-        auto inner_diff = lhs_->differentiate(variableName);
         return std::make_shared<Expression<T>>(
             '*',
             Expression<T>::cos(lhs_),
-            inner_diff
+            lhs_->differentiate(variableName)
         );
     } else if (op_ == 'c') {
         return std::make_shared<Expression<T>>(
@@ -181,22 +175,12 @@ std::shared_ptr<Expression<T>> Expression<T>::differentiate(const std::string& v
         auto v_diff = rhs_->differentiate(variableName);
         return std::make_shared<Expression<T>>(
             '*',
-            std::make_shared<Expression<T>>(
-                '^', lhs_, rhs_
-            ),
+            std::make_shared<Expression<T>>('^', lhs_, rhs_),
             std::make_shared<Expression<T>>(
                 '+',
+                std::make_shared<Expression<T>>('*', v_diff, Expression<T>::ln(lhs_)),
                 std::make_shared<Expression<T>>(
-                    '*', v_diff, Expression<T>::ln(lhs_)
-                ),
-                std::make_shared<Expression<T>>(
-                    '*',
-                    rhs_,
-                    std::make_shared<Expression<T>>(
-                        '/',
-                        u_diff,
-                        lhs_
-                    )
+                    '*', rhs_, std::make_shared<Expression<T>>('/', u_diff, lhs_)
                 )
             )
         );
@@ -206,23 +190,13 @@ std::shared_ptr<Expression<T>> Expression<T>::differentiate(const std::string& v
 }
 
 template <typename T>
-typename Expression<T>::Ptr Expression<T>::sin(Ptr arg) {
-    return std::make_shared<Expression<T>>('s', arg, nullptr);
-}
-
-template <typename T>
-typename Expression<T>::Ptr Expression<T>::cos(Ptr arg) {
-    return std::make_shared<Expression<T>>('c', arg, nullptr);
-}
-
-template <typename T>
-typename Expression<T>::Ptr Expression<T>::ln(Ptr arg) {
-    return std::make_shared<Expression<T>>('l', arg, nullptr);
-}
-
-template <typename T>
-typename Expression<T>::Ptr Expression<T>::exp(Ptr arg) {
-    return std::make_shared<Expression<T>>('e', arg, nullptr);
+typename Expression<T>::Ptr Expression<T>::fromString(const std::string& str) {
+    try {
+        T val = std::stod(str);
+        return std::make_shared<Expression<T>>(val);
+    } catch (const std::invalid_argument&) {
+        return std::make_shared<Expression<T>>(str);
+    }
 }
 
 template class Expression<double>;

@@ -91,7 +91,7 @@ typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& vari
             auto u_prime = lhs_->differentiate(variable);
             auto term1 = v_prime * ln_u;
             auto term2 = rhs_ * (u_prime / lhs_);
-            return *this * (term1 + term2);
+            return std::make_shared<Expression<T>>('^', lhs_, rhs_) * (term1 + term2);
         } 
         else {
             auto new_exp = lhs_ ^ (rhs_ - std::make_shared<Expression<T>>(1.0));

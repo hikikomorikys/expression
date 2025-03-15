@@ -27,6 +27,7 @@ public:
     static Ptr cos(Ptr arg);
     static Ptr ln(Ptr arg);
     static Ptr exp(Ptr arg);
+    static Ptr fromString(const std::string& str);
     Ptr differentiate(const std::string& var) const;
     T evaluate(const std::map<std::string, T>& variables) const;
     std::string toString() const;

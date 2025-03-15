@@ -8,7 +8,7 @@
 #include <complex>
 
 template <typename T>
-class Expression{
+class Expression {
 public:
     using Ptr = std::shared_ptr<Expression>;
     Expression(T value);
@@ -39,7 +39,11 @@ private:
     char op;
     Ptr left, right;
     std::string func;
+    static Ptr add(Ptr lhs, Ptr rhs);
+    static Ptr subtract(Ptr lhs, Ptr rhs);
+    static Ptr multiply(Ptr lhs, Ptr rhs);
+    static Ptr divide(Ptr lhs, Ptr rhs);
+    static Ptr power(Ptr lhs, Ptr rhs);
 };
-
 #include "expression.cpp"
 #endif

@@ -20,24 +20,24 @@ std::string Expression<T>::toString() const {
     std::ostringstream os;
     os.precision(6);
     os << std::fixed;
+    
     if (op_ == 0) {
         if (!variable_.empty()) {
             os << variable_;
         } else {
             os << value_;
         }
-    } 
-    else {
+    } else {
         if (op_ == 's' || op_ == 'c' || op_ == 'l' || op_ == 'e') {
             os << op_ << "(" << lhs_->toString() << ")";
-        } else if (op_ == '+' || op_ == '-') {
-            os << "(" << lhs_->toString() << " " << op_ << " " << rhs_->toString() << ")";
         } else {
-            os << "(" << lhs_->toString() << ") " << op_ << " (" << rhs_->toString() << ")";
+            os << "(" << lhs_->toString() << " " << op_ << " " << rhs_->toString() << ")";
         }
     }
+    
     return os.str();
 }
+
 
 template <typename T>
 T Expression<T>::evaluate(const std::map<std::string, T>& variables) const {

@@ -20,31 +20,34 @@ std::string Expression<T>::toString() const {
     std::ostringstream os;
     os.precision(6);
     os << std::fixed;
-    
     if (op_ == 0) {
         if (!variable_.empty()) {
-            os << variable_;
-        } else {
-            os << value_;
+            return variable_;
         }
-    } else {
-        if (op_ == 's') {
-            os << "sin(" << lhs_->toString() << ")";
-        } else if (op_ == 'c') {
-            os << "cos(" << lhs_->toString() << ")";
-        } else if (op_ == 'l') {
-            os << "ln(" << lhs_->toString() << ")";
-        } else if (op_ == 'e') {
-            os << "exp(" << lhs_->toString() << ")";
-        }
-        else {
-            os << "(" << lhs_->toString() << " " << op_ << " " << rhs_->toString() << ")";
-        }
+        return std::to_string(value_);
     }
-    
-    return os.str();
+    if (op_ == 's') {
+        return "sin(" + lhs_->toString() + ")";
+    } else if (op_ == 'c') {
+        return "cos(" + lhs_->toString() + ")";
+    } else if (op_ == 'l') {
+        return "ln(" + lhs_->toString() + ")";
+    } else if (op_ == 'e') {
+        return "exp(" + lhs_->toString() + ")";
+    }
+    else if (op_ == '+') {
+        return "(" + lhs_->toString() + " + " + rhs_->toString() + ")";
+    }
+    else if (op_ == '*') {
+        return "(" + lhs_->toString() + " * " + rhs_->toString() + ")";
+    }
+    else if (op_ == '+') {
+        return lhs_->toString() + " + " + rhs_->toString();
+    } else if (op_ == '*') {
+        return "(" + lhs_->toString() + " * " + rhs_->toString() + ")";
+    }
+    return "(" + lhs_->toString() + " " + op_ + " " + rhs_->toString() + ")";
 }
-
 
 template <typename T>
 T Expression<T>::evaluate(const std::map<std::string, T>& variables) const {
@@ -57,68 +60,149 @@ T Expression<T>::evaluate(const std::map<std::string, T>& variables) const {
             return value_;
         }
     }
-
     T lhs_val = lhs_->evaluate(variables);
-    
     switch (op_) {
-        case '+': return lhs_val + rhs_->evaluate(variables);
-        case '-': return lhs_val - rhs_->evaluate(variables);
-        case '*': return lhs_val * rhs_->evaluate(variables);
-        case '/': return lhs_val / rhs_->evaluate(variables);
-        case '^': return std::pow(lhs_val, rhs_->evaluate(variables));
-        case 's': return std::sin(lhs_val);
-        case 'c': return std::cos(lhs_val);
+        case '+':
+            return lhs_val + rhs_->evaluate(variables);
+        case '-':
+            return lhs_val - rhs_->evaluate(variables);
+        case '*':
+            return lhs_val * rhs_->evaluate(variables);
+        case '/': {
+            T rhs_val = rhs_->evaluate(variables);
+            if (rhs_val == T(0)) throw std::runtime_error("Division by zero.");
+            return lhs_val / rhs_val;
+        }
+        case '^':
+            return std::pow(lhs_val, rhs_->evaluate(variables));
+        case 's':
+            return std::sin(lhs_val);
+        case 'c':
+            return std::cos(lhs_val);
         case 'l':
-            if (lhs_val <= 0) throw std::runtime_error("ln domain error");
+            if (lhs_val <= T(0)) throw std::runtime_error("ln domain error.");
             return std::log(lhs_val);
-        case 'e': return std::exp(lhs_val);
+        case 'e':
+            return std::exp(lhs_val);
         default:
-            throw std::runtime_error("Unknown operator");
+            throw std::runtime_error("Unknown operator in evaluation.");
     }
 }
 
 template <typename T>
-typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& variable) const {
+std::shared_ptr<Expression<T>> Expression<T>::differentiate(const std::string& variableName) const {
     if (op_ == 0) {
-        if (variable_ == variable) {
-            return std::make_shared<Expression<T>>(1.0);
+        if (!variable_.empty()) {
+            return variable_ == variableName
+                ? std::make_shared<Expression<T>>(1.0)
+                : std::make_shared<Expression<T>>(0.0);
         } else {
             return std::make_shared<Expression<T>>(0.0);
         }
-    }
-
-    if (op_ == '+') {
-        return lhs_->differentiate(variable) + rhs_->differentiate(variable);
+    } else if (op_ == '+') {
+        return std::make_shared<Expression<T>>(
+            '+',
+            lhs_->differentiate(variableName),
+            rhs_->differentiate(variableName)
+        );
     } else if (op_ == '-') {
-        return lhs_->differentiate(variable) - rhs_->differentiate(variable);
-    } else if (op_ == '*') { 
-        return (lhs_->differentiate(variable) * rhs_) + (lhs_ * rhs_->differentiate(variable));
+        return std::make_shared<Expression<T>>(
+            '-',
+            lhs_->differentiate(variableName),
+            rhs_->differentiate(variableName)
+        );
+    } else if (op_ == '*') {
+        auto left = std::make_shared<Expression<T>>(
+            '*',
+            lhs_->differentiate(variableName),
+            rhs_
+        );
+        auto right = std::make_shared<Expression<T>>(
+            '*',
+            lhs_,
+            rhs_->differentiate(variableName)
+        );
+        return std::make_shared<Expression<T>>(
+            '+',
+            right,
+            left
+        );
     } else if (op_ == '/') {
-        return ((lhs_->differentiate(variable) * rhs_) - (lhs_ * rhs_->differentiate(variable)))
-               / (rhs_ * rhs_);
-    } else if (op_ == '^') {
-        if (!rhs_->variable_.empty()) {
-            auto ln_u = Expression<T>::ln(lhs_);
-            auto v_prime = rhs_->differentiate(variable);
-            auto u_prime = lhs_->differentiate(variable);
-            auto term1 = v_prime * ln_u;
-            auto term2 = rhs_ * (u_prime / lhs_);
-            return std::make_shared<Expression<T>>('^', lhs_, rhs_) * (term1 + term2);
-        } 
-        else {
-            auto new_exp = lhs_ ^ (rhs_ - std::make_shared<Expression<T>>(1.0));
-            return rhs_ * new_exp * lhs_->differentiate(variable);
-        }
+        return std::make_shared<Expression<T>>(
+            '/',
+            std::make_shared<Expression<T>>(
+                '-',
+                std::make_shared<Expression<T>>(
+                    '*',
+                    lhs_->differentiate(variableName),
+                    rhs_
+                ),
+                std::make_shared<Expression<T>>(
+                    '*',
+                    lhs_,
+                    rhs_->differentiate(variableName)
+                )
+            ),
+            std::make_shared<Expression<T>>(
+                '*', rhs_, rhs_
+            )
+        );
     } else if (op_ == 's') {
-        return Expression<T>::cos(lhs_) * lhs_->differentiate(variable);
+        auto inner_diff = lhs_->differentiate(variableName);
+        return std::make_shared<Expression<T>>(
+            '*',
+            Expression<T>::cos(lhs_),
+            inner_diff
+        );
     } else if (op_ == 'c') {
-        return Expression<T>::sin(lhs_) * std::make_shared<Expression<T>>(-1.0) * lhs_->differentiate(variable);
+        return std::make_shared<Expression<T>>(
+            '*',
+            std::make_shared<Expression<T>>(
+                '-',
+                std::make_shared<Expression<T>>(0.0),
+                Expression<T>::sin(lhs_)
+            ),
+            lhs_->differentiate(variableName)
+        );
     } else if (op_ == 'l') {
-        return lhs_->differentiate(variable) / lhs_;
+        return std::make_shared<Expression<T>>(
+            '/',
+            lhs_->differentiate(variableName),
+            lhs_
+        );
     } else if (op_ == 'e') {
-        return Expression<T>::exp(lhs_) * lhs_->differentiate(variable);
+        return std::make_shared<Expression<T>>(
+            '*',
+            Expression<T>::exp(lhs_),
+            lhs_->differentiate(variableName)
+        );
+    } else if (op_ == '^') {
+        auto u_diff = lhs_->differentiate(variableName);
+        auto v_diff = rhs_->differentiate(variableName);
+        return std::make_shared<Expression<T>>(
+            '*',
+            std::make_shared<Expression<T>>(
+                '^', lhs_, rhs_
+            ),
+            std::make_shared<Expression<T>>(
+                '+',
+                std::make_shared<Expression<T>>(
+                    '*', v_diff, Expression<T>::ln(lhs_)
+                ),
+                std::make_shared<Expression<T>>(
+                    '*',
+                    rhs_,
+                    std::make_shared<Expression<T>>(
+                        '/',
+                        u_diff,
+                        lhs_
+                    )
+                )
+            )
+        );
+    } else {
+        throw std::runtime_error("Unknown operator in differentiation.");
     }
-    throw std::runtime_error("Неизвестная операция");
 }
 
 template <typename T>
@@ -141,16 +225,4 @@ typename Expression<T>::Ptr Expression<T>::exp(Ptr arg) {
     return std::make_shared<Expression<T>>('e', arg, nullptr);
 }
 
-template <typename T>
-typename Expression<T>::Ptr Expression<T>::fromString(const std::string& str) {
-    if (str == "x" || str == "y") {
-        return std::make_shared<Expression<T>>(str);
-    }
-    try {
-        double value = std::stod(str);
-        return std::make_shared<Expression<T>>(value);
-    } catch (const std::invalid_argument&) {
-        throw std::runtime_error("Invalid input string");
-    }
-}
 template class Expression<double>;

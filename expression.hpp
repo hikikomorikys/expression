@@ -31,6 +31,7 @@ public:
     Ptr differentiate(const std::string& var) const;
     T evaluate(const std::map<std::string, T>& variables) const;
     std::string toString() const;
+    static Ptr fromString(const std::string& str);
 private:
     enum class Type { CONSTANT, VARIABLE, OPERATION, FUNCTION };
     Type type;

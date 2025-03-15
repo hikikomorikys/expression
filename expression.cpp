@@ -142,4 +142,15 @@ std::string Expression<T>::toString() const {
     }
     return oss.str();
 }
+template <typename T>
+typename Expression<T>::Ptr Expression<T>::fromString(const std::string& str) {
+    std::istringstream iss(str);
+    T value;
+    if (iss >> value) {
+        return std::make_shared<Expression<T>>(value);
+    }
+    else {
+        return std::make_shared<Expression<T>>(str);
+    }
+}
 template class Expression<double>;

@@ -21,7 +21,7 @@ std::string Expression<T>::toString() const {
     os.precision(6);
     os << std::fixed;
 
-    if (op_ == 0) {  // Листовой узел: переменная или число
+    if (op_ == 0) {
         if (!variable_.empty()) {
             os << variable_;
         } else {
@@ -29,7 +29,6 @@ std::string Expression<T>::toString() const {
         }
     } else {
         if (op_ == '*') {
-            // Если одно из слагаемых равно 1, убираем умножение
             bool lhs_is_one = lhs_->op_ == 0 && lhs_->value_ == 1.0;
             bool rhs_is_one = rhs_->op_ == 0 && rhs_->value_ == 1.0;
             
@@ -48,7 +47,7 @@ std::string Expression<T>::toString() const {
             os << "ln(" << lhs_->toString() << ")";
         } else if (op_ == 'e') {  // exp
             os << "exp(" << lhs_->toString() << ")";
-        } else {  // Операции +, -, /, ^
+        } else {  // операции +, -, /, ^
             os << "(" << lhs_->toString() << " " << op_ << " " << rhs_->toString() << ")";
         }
     }
@@ -116,10 +115,10 @@ typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& vari
             auto new_exp = lhs_ ^ (rhs_ - std::make_shared<Expression<T>>(1.0));
             return rhs_ * new_exp * lhs_->differentiate(variable);
         }
-    } else if (op_ == 's') { // sin
+    } else if (op_ == 's') {
         auto diff = lhs_->differentiate(variable);
         return Expression<T>::cos(lhs_) * diff;
-    } else if (op_ == 'c') { // cos
+    } else if (op_ == 'c') {
         auto diff = lhs_->differentiate(variable);
         auto neg_sin = Expression<T>::sin(lhs_) * std::make_shared<Expression<T>>(-1.0);
         return neg_sin * diff;

@@ -79,31 +79,34 @@ typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& vari
         return lhs_->differentiate(variable) + rhs_->differentiate(variable);
     } else if (op_ == '-') {
         return lhs_->differentiate(variable) - rhs_->differentiate(variable);
-    } else if (op_ == '*') {
+    } else if (op_ == '*') { 
         return (lhs_->differentiate(variable) * rhs_) + (lhs_ * rhs_->differentiate(variable));
     } else if (op_ == '/') {
-        return ((lhs_->differentiate(variable) * rhs_) - (lhs_ * rhs_->differentiate(variable))) / (rhs_ * rhs_);
+        return ((lhs_->differentiate(variable) * rhs_) - (lhs_ * rhs_->differentiate(variable)))
+               / (rhs_ * rhs_);
+    } else if (op_ == '^') {
+        if (!rhs_->variable_.empty()) {
+            auto ln_u = Expression<T>::ln(lhs_);
+            auto v_prime = rhs_->differentiate(variable);
+            auto u_prime = lhs_->differentiate(variable);
+            auto term1 = v_prime * ln_u;
+            auto term2 = rhs_ * (u_prime / lhs_);
+            return *this * (term1 + term2);
+        } 
+        else {
+            auto new_exp = lhs_ ^ (rhs_ - std::make_shared<Expression<T>>(1.0));
+            return rhs_ * new_exp * lhs_->differentiate(variable);
+        }
     } else if (op_ == 's') {
         return Expression<T>::cos(lhs_) * lhs_->differentiate(variable);
     } else if (op_ == 'c') {
         return Expression<T>::sin(lhs_) * std::make_shared<Expression<T>>(-1.0) * lhs_->differentiate(variable);
     } else if (op_ == 'l') {
-        return (lhs_->differentiate(variable) / lhs_);
+        return lhs_->differentiate(variable) / lhs_;
     } else if (op_ == 'e') {
         return Expression<T>::exp(lhs_) * lhs_->differentiate(variable);
-    } else if (op_ == '^') {
-        return std::make_shared<Expression<T>>(
-            '*',
-            std::make_shared<Expression<T>>(
-                '*',
-                rhs_,
-                (lhs_ ^ (rhs_ - std::make_shared<Expression<T>>(1.0)))
-            ),
-            lhs_->differentiate(variable)
-        );
     }
-
-    throw std::runtime_error("Unsupported differentiation operation");
+    throw std::runtime_error("Неизвестная операция");
 }
 
 template <typename T>

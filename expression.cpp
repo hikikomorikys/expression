@@ -123,4 +123,15 @@ typename Expression<T>::Ptr Expression<T>::differentiate(const std::string& var)
     }
     throw std::runtime_error("Ошибка вычисления производной");
 }
+
+template <typename T>
+Expression<T> Expression<T>::fromString(const std::string& str) {
+    std::istringstream iss(str);
+    T value;
+    if (iss >> value) {
+        return Expression<T>(value);
+    } else {
+        return Expression<T>(str);
+    }
+}
 template class Expression<double>;

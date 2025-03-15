@@ -16,7 +16,6 @@ Expression<T>::Expression(char op, Ptr lhs, Ptr rhs)
     : op_(op), value_(0), variable_(""), lhs_(lhs), rhs_(rhs) {}
 
 template <typename T>
-template <typename T>
 std::string Expression<T>::toString() const {
     std::ostringstream os;
     os.precision(6);

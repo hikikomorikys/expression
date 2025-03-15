@@ -4,27 +4,27 @@
 #include <cmath>
 
 template <typename T>
-typename Expression<T>::Ptr add(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+typename Expression<T>::Ptr Expression<T>::add(Ptr lhs, Ptr rhs) {
     return std::make_shared<Expression<T>>('+', lhs, rhs);
 }
 
 template <typename T>
-typename Expression<T>::Ptr subtract(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+typename Expression<T>::Ptr Expression<T>::subtract(Ptr lhs, Ptr rhs) {
     return std::make_shared<Expression<T>>('-', lhs, rhs);
 }
 
 template <typename T>
-typename Expression<T>::Ptr multiply(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+typename Expression<T>::Ptr Expression<T>::multiply(Ptr lhs, Ptr rhs) {
     return std::make_shared<Expression<T>>('*', lhs, rhs);
 }
 
 template <typename T>
-typename Expression<T>::Ptr divide(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+typename Expression<T>::Ptr Expression<T>::divide(Ptr lhs, Ptr rhs) {
     return std::make_shared<Expression<T>>('/', lhs, rhs);
 }
 
 template <typename T>
-typename Expression<T>::Ptr power(typename Expression<T>::Ptr lhs, typename Expression<T>::Ptr rhs){
+typename Expression<T>::Ptr Expression<T>::power(Ptr lhs, Ptr rhs) {
     return std::make_shared<Expression<T>>('^', lhs, rhs);
 }
 
